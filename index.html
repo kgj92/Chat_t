@@ -112,15 +112,15 @@
 <body>
   <header>💬</header>
   <div id="chat"></div>
-
+     <input id="message" placeholder="메시지를 입력하세요..." />
+    <input type="file" id="imageInput" accept="image/*" />
+    <button onclick="sendMessage()">전송</button>
+  </div>
   <div id="inputBox">
     <div id="stickerBox">
   <img src="stickers/1.png" onclick="sendSticker('stickers/1.png')">
 </div>
-    <input id="message" placeholder="메시지를 입력하세요..." />
-    <input type="file" id="imageInput" accept="image/*" />
-    <button onclick="sendMessage()">전송</button>
-  </div>
+ 
 
   <!-- socket.io 연결 -->
   <script src="https://one23-9wul.onrender.com/socket.io/socket.io.js"></script>
