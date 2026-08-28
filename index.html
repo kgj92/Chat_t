@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta property="og:type" content="website"> 
+<meta property="og:title" content="채팅24">
+<meta property="og:description" content="100% 익명(로그인X) 하고싶은 말 싸지르는 웹 채팅">
+<meta property="og:url" content="http://chatting-24.netlify.app">
+<meta name="description" content="100% 익명(로그인X) 하고싶은 말 싸지르는 웹 채팅">
+<title>채팅24</title>
+
+<style>
+*{
+    box-sizing:border-box;
+}
+
+html,body{
+    margin:0;
+    padding:0;
+    height:100%;
+    font-family:sans-serif;
+    display:flex;
+    flex-direction:column;
+    background:#fff;
+}
+
+header{
+    position:relative;
+    text-align:center;
+    padding:1rem;
+    background:#f0f0f0;
+    font-size:1.5rem;
+    font-weight:bold;
+}
+#menuBtn{
+    position:absolute;
+    left:12px;
+    top:50%;
+    transform:translateY(-50%);
+    width:42px;
+    height:42px;
+    padding:0;
+    background:transparent;
+    font-size:0;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    gap:5px;
+    transition:transform .25s ease;
+    z-index:1002;
+}
+#menuBtn span{
+    display:block;
+    width:23px;
+    height:3px;
+    background:#222;
+    border-radius:2px;
+}
+#menuBtn.open{ transform:translateY(-50%) rotate(90deg); }
+#menuOverlay{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.45);
+    opacity:0;
+    visibility:hidden;
+    transition:opacity .25s ease, visibility .25s ease;
+    z-index:1000;
+}
+#menuOverlay.open{ opacity:1; visibility:visible; }
+#sideMenu{
+    position:fixed;
+    top:0;
+    left:0;
+    width:280px;
+    max-width:82vw;
+    height:100%;
+    background:#fff;
+    box-shadow:4px 0 14px rgba(0,0,0,.12);
+    transform:translateX(-100%);
+    transition:transform .25s ease;
+    z-index:1001;
+    padding:72px 18px 20px;
+}
+#sideMenu.open{ transform:translateX(0); }
+.menuItem{
+    display:block;
+    width:100%;
+    padding:15px 10px;
+    text-align:left;
+    background:transparent;
+    border-bottom:1px solid #eee;
+    border-radius:0;
+    font-size:16px;
+}
+
+#chat{
+    flex:1;
+    overflow-y:auto;
+    padding:1rem;
+}
+
+.message{
+    margin-bottom:1rem;
+}
+
+.message img{
+    max-width:200px;
+    display:block;
+    margin-top:5px;
+}
+
+.timestamp{
+    font-size:12px;
+    color:#777;
+    margin-top:3px;
+}
+
+#inputBox{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:10px;
+    border-top:1px solid #ccc;
+    background:#fafafa;
+}
+
+#message{
+    flex:1;
+    padding:10px;
+    border:1px solid #ccc;
+    border-radius:8px;
+}
+
+button{
+    border:none;
+    background:#f0f0f0;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+#sendBtn{
+    padding:10px 15px;
+    color:blue;
+}
+
+#imageSelectBtn{
+    padding:10px 12px;
+}
+
+#selectedImageName{
+    max-width:180px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    color:#555;
+    font-size:14px;
+}
+
+#emojiBtn{
+    width:45px;
+    height:45px;
+    font-size:22px;
+}
+
+#stickerBox{
+    display:none;
+    position:fixed;
+    bottom:75px;
+    left:10px;
+    width:200px;
+    background:white;
+    border:1px solid #ddd;
+    border-radius:12px;
+    padding:10px;
+    grid-template-columns:repeat(2, 1fr);
+    gap:8px;
+    box-shadow:0 2px 10px rgba(0,0,0,.15);
+    z-index:999;
+}
+
+#stickerBox img{
+    width:100%;
+    aspect-ratio:1 / 1;
+    object-fit:contain;
+    cursor:pointer;
+    border-radius:8px;
+    padding:4px;
+    transition:background .15s, transform .15s;
+}
+
+#stickerBox img:hover{
+    background:#f0f0f0;
+    transform:scale(1.03);
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <button id="menuBtn" type="button" aria-label="메뉴 열기" aria-expanded="false">
+        <span></span><span></span><span></span>
+    </button>
+    💬
+</header>
+<div id="menuOverlay"></div>
+<nav id="sideMenu" aria-hidden="true">
+    <button class="menuItem" type="button">커뮤니티 정책</button>
+</nav>
+
+<div id="chat"></div>
+
+<div id="stickerBox">
+    <img src="stickers/1.png" onclick="sendSticker('stickers/1.png')">
+    <img src="stickers/2.png" onclick="sendSticker('stickers/2.png')">
+    <img src="stickers/3.png" onclick="sendSticker('stickers/3.png')">
+    <img src="stickers/4.png" onclick="sendSticker('stickers/4.png')">
+</div>
+
+<div id="inputBox">
+
+    <button id="emojiBtn">😀</button>
+
+    <input
+        id="message"
+        placeholder="메시지를 입력하세요..."
+    >
+
+    <input
+        type="file"
+        id="imageInput"
+        accept="image/*"
+        hidden
+    >
+    <button id="imageSelectBtn" type="button">사진 선택</button>
+    <span id="selectedImageName">사진을 선택하세요</span>
+
+    <button id="sendBtn" onclick="sendMessage()">
+        전송
+    </button>
+
+</div>
+
+<script src="https://one23-9wul.onrender.com/socket.io/socket.io.js"></script>
+
+<script>
+
+// F5 / Ctrl+R / Cmd+R 새로고침 방지
+window.addEventListener("keydown", (e) => {
+    if (e.key === "F5" ||
+        ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "r")) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+});
+
+const socket = io("https://one23-9wul.onrender.com");
+
+const chat = document.getElementById("chat");
+const messageInput = document.getElementById("message");
+const imageInput = document.getElementById("imageInput");
+const imageSelectBtn = document.getElementById("imageSelectBtn");
+const selectedImageName = document.getElementById("selectedImageName");
+
+const emojiBtn = document.getElementById("emojiBtn");
+const stickerBox = document.getElementById("stickerBox");
+const menuBtn = document.getElementById("menuBtn");
+const sideMenu = document.getElementById("sideMenu");
+const menuOverlay = document.getElementById("menuOverlay");
+
+function toggleMenu(){
+    const isOpen = sideMenu.classList.toggle("open");
+    menuOverlay.classList.toggle("open", isOpen);
+    menuBtn.classList.toggle("open", isOpen);
+    menuBtn.setAttribute("aria-expanded", isOpen);
+    menuBtn.setAttribute("aria-label", isOpen ? "메뉴 닫기" : "메뉴 열기");
+    sideMenu.setAttribute("aria-hidden", !isOpen);
+}
+menuBtn.addEventListener("click", toggleMenu);
+menuOverlay.addEventListener("click", toggleMenu);
+
+imageSelectBtn.addEventListener("click", () => {
+    imageInput.click();
+});
+
+imageInput.addEventListener("change", () => {
+    const file = imageInput.files[0];
+
+    if(file){
+        selectedImageName.textContent = file.name;
+        selectedImageName.title = file.name;
+    }else{
+        selectedImageName.textContent = "사진을 선택하세요";
+        selectedImageName.title = "";
+    }
+});
+
+function getTime(){
+    const now = new Date();
+
+    return now.toLocaleTimeString([],{
+        hour:"2-digit",
+        minute:"2-digit"
+    });
+}
+
+emojiBtn.onclick = () => {
+
+    if(stickerBox.style.display === "flex"){
+        stickerBox.style.display = "none";
+    }else{
+        stickerBox.style.display = "grid";
+    }
+
+};
+
+function sendSticker(src){
+
+    socket.emit("chat message",{
+        type:"image",
+        content:src,
+        time:getTime()
+    });
+
+    stickerBox.style.display = "none";
+}
+
+let sendCooldown = false;
+
+function sendMessage(){
+
+    if(sendCooldown) return;
+
+    const msg = messageInput.value.trim();
+    const file = imageInput.files[0];
+
+    // 보낼 내용이 있을 때만 1초 쿨다운 시작
+    if(!msg && !file) return;
+
+    sendCooldown = true;
+    sendBtn.disabled = true;
+    sendBtn.style.opacity = "0.5";
+    sendBtn.style.cursor = "not-allowed";
+
+    const timestamp = getTime();
+
+    if(msg){
+
+        socket.emit("chat message",{
+            type:"text",
+            content:msg,
+            time:timestamp
+        });
+
+        messageInput.value = "";
+    }
+
+    if(file){
+
+        const reader = new FileReader();
+
+        reader.onload = function(e){
+
+            socket.emit("chat message",{
+                type:"image",
+                content:e.target.result,
+                time:timestamp
+            });
+
+        };
+
+        reader.readAsDataURL(file);
+
+        imageInput.value = "";
+        selectedImageName.textContent = "사진을 선택하세요";
+        selectedImageName.title = "";
+    }
+
+    // 1초 동안 소수점 1자리까지 카운트다운 표시
+    const cooldownMs = 2000;
+    const endTime = performance.now() + cooldownMs;
+
+    function updateCountdown(){
+        const remaining = Math.max(0, endTime - performance.now());
+        const seconds = (remaining / 1000).toFixed(1);
+
+        if(remaining > 0){
+            sendBtn.textContent = seconds;
+            requestAnimationFrame(updateCountdown);
+        }else{
+            sendCooldown = false;
+            sendBtn.disabled = false;
+            sendBtn.style.opacity = "";
+            sendBtn.style.cursor = "";
+            sendBtn.textContent = "전송";
+        }
+    }
+
+    updateCountdown();
+}
+
+socket.on("chat message",(data)=>{
+
+    const wrapper = document.createElement("div");
+    wrapper.classList.add("message");
+
+    if(data.type === "text"){
+
+        const text = document.createElement("div");
+        text.textContent = data.content;
+        wrapper.appendChild(text);
+
+    }
+
+    if(data.type === "image"){
+
+        const img = document.createElement("img");
+        img.src = data.content;
+        wrapper.appendChild(img);
+
+    }
+
+    const time = document.createElement("div");
+    time.classList.add("timestamp");
+    time.textContent = data.time || "";
+
+    wrapper.appendChild(time);
+
+    chat.appendChild(wrapper);
+
+    chat.scrollTop = chat.scrollHeight;
+
+});
+
+messageInput.addEventListener("keypress",(e)=>{
+
+    if(e.key === "Enter"){
+
+        e.preventDefault();
+        sendMessage();
+
+    }
+
+});
+
+</script>
+
+</body>
+</html>
