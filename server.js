@@ -7,7 +7,7 @@ import WebSocket from "ws";
 
 const PORT = Number(process.env.PORT || 3000);
 const API_KEY = process.env.TWELVE_DATA_API_KEY;
-const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "https://chatting-24.netlify.app";
+const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "https://stock-24.netlify.app";
 const TD_BASE = "https://api.twelvedata.com";
 
 if (!API_KEY) console.warn("TWELVE_DATA_API_KEY is not set.");
